@@ -39,16 +39,20 @@ body {
   color: var(--text-primary);
 }
 
-/* Login Page */
-.login-container {
+/* Login and Register Common Styles */
+.login-container,
+.register-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  width: 100%;
   background-color: var(--bg-color);
+  position: relative;
 }
 
-.login-form {
+.login-form,
+.register-form {
   background-color: var(--card-bg);
   border-radius: var(--border-radius);
   padding: 2.5rem;
@@ -56,16 +60,75 @@ body {
   max-width: 400px;
   box-shadow: var(--shadow-md);
   text-align: center;
+  position: relative;
+  animation: fadeIn 0.3s ease-out;
 }
 
-.login-form h1 {
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-form h1,
+.register-form h1 {
   color: var(--primary-color);
   margin-bottom: 0.5rem;
+  font-size: 2rem;
 }
 
-.login-form p {
+.login-form p,
+.register-form p {
   color: var(--text-secondary);
   margin-bottom: 2rem;
+  font-size: 1rem;
+}
+
+.register-button {
+  width: 100%;
+  padding: 1rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+  margin-bottom: 1.5rem;
+}
+
+.register-button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.auth-links {
+  margin-top: 1.5rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.auth-links a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
 }
 
 .form-group {
@@ -767,6 +830,189 @@ h1 {
     background-color: #242424;
     color: var(--text-primary);
   }
+
+}
+
+/* Registration Form Styles */
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  position: relative;
+}
+
+.register-form {
+  background: var(--card-bg);
+  padding: 2.5rem;
+  border-radius: var(--border-radius);
+  width: 100%;
+  max-width: 500px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  margin-top: 2rem;
+}
+
+.register-form h1 {
+  margin-bottom: 0.5rem;
+  color: #333;
+  text-align: center;
+}
+
+.register-form p {
+  color: #666;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.auth-switch {
+  margin-top: 0;
+  padding-top: 1.5rem;
+  text-align: center;
+  color: var(--text-secondary);
+  border-top: 1px solid #e0e0e0;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.link-button:hover {
+  background-color: var(--bg-color);
+  text-decoration: none;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Learning Preferences Styles */
+.preferences-section {
+  background-color: var(--bg-color);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  margin: 1.5rem 0;
+}
+
+.preferences-section h3 {
+  color: var(--primary-color);
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.preferences-info {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.preference-group {
+  margin-bottom: 1.5rem;
+}
+
+.preference-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.preference-boxes-container {
+  display: flex;
+  gap: 4px;
+  padding: 0.5rem 0;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.preference-box {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  background-color: var(--card-bg);
+}
+
+.preference-box:hover {
+  transform: scale(1.1);
+  border-color: var(--primary-color);
+}
+
+.preference-box.projects.active {
+  background-color: #4CAF50;
+  border-color: #388E3C;
+}
+
+.preference-box.videos.active {
+  background-color: #2196F3;
+  border-color: #1976D2;
+}
+
+.preference-box.books.active {
+  background-color: #9C27B0;
+  border-color: #7B1FA2;
+}
+
+.total-units {
+  text-align: right;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  font-weight: 500;
+  padding: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.register-link-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 10%;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  z-index: 100;
+  text-transform: capitalize;
+}
+
+.register-link-button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+=======
 
 
   .category-btn {

@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 import { Book, Home, User, BarChart, Settings, Search, LogIn, Flame, LogOut } from 'lucide-react'
 import { courseService, pathService, authService } from './services/api'
+
+import { LoginForm } from './components/auth/LoginForm'
+import { RegisterForm } from './components/auth/RegisterForm'
+import { Sidebar } from './components/navigation/Sidebar'
+import { Header } from './components/navigation/Header'
+import { HomePage } from './components/pages/HomePage'
+
 import CourseView from './components/CourseView/CourseView'
 import Profile from './components/Profile/Profile' // Add this import
 
@@ -16,6 +24,7 @@ const courseImageMap = {
   'CSS Mastery: Advanced Layouts': courseImages['./img/CSS.png'],
 }
 
+
 function App() {
   const [activeTab, setActiveTab] = useState('home')
   const [user, setUser] = useState(null)
@@ -23,6 +32,9 @@ function App() {
   const [recommendedCourses, setRecommendedCourses] = useState([])
   const [userCourses, setUserCourses] = useState([])
   const [learningPaths, setLearningPaths] = useState([])
+
+  
+
   const [streak, setStreak] = useState(0) // Streak state
   const [selectedCourseId, setSelectedCourseId] = useState(null)
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -35,6 +47,7 @@ function App() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
+
 
   useEffect(() => {
     async function checkAuthStatus() {
@@ -106,16 +119,34 @@ function App() {
     setStreak(currentStreak)
   }
 
+  
+  async function handleLogin(username, password) {
+
+
   async function handleLogin(e) {
     e.preventDefault()
     setLoginError('')
+
     try {
       const userData = await authService.login(username, password)
       setUser(userData)
       console.log('Logged in successfully as:', userData.username)
     } catch (error) {
+
+      throw error;
+    }
+  }
+
+  async function handleRegister(formData) {
+    try {
+      await authService.register(formData);
+      console.log('Registration successful');
+    } catch (error) {
+      throw error;
+
       setLoginError('Invalid username or password')
       console.log(error)
+
     }
   }
 
@@ -155,6 +186,37 @@ function App() {
   if (loading) {
     return <div className="loading">Loading...</div>
   }
+
+  
+  return (
+    <Router>
+      <div className="app-container">
+        {user ? (
+          <>
+            <Sidebar 
+              activeTab={activeTab} 
+              setActiveTab={setActiveTab} 
+              onLogout={handleLogout} 
+            />
+            <div className="main-content">
+              <Header user={user} />
+              {activeTab === 'home' && (
+                <HomePage 
+                  user={user}
+                  recommendedCourses={recommendedCourses}
+                  learningPaths={learningPaths}
+                />
+              )}
+              {/* Other tab content will be added here */}
+            </div>
+          </>
+        ) : (
+          <Routes>
+            <Route path="/login" element={<LoginForm onLogin={handleLogin} />} />
+            <Route path="/register" element={<RegisterForm onRegister={handleRegister} />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+
 
   if (!user) {
     return (
@@ -522,9 +584,10 @@ function App() {
               </div>
             )}
           </div>
+
         )}
       </div>
-    </div>
+    </Router>
   )
 }
 
