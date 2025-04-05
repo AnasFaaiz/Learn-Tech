@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { Book, Home, User, BarChart, Settings, Search, LogIn } from 'lucide-react'
 import { courseService, pathService, authService } from './services/api'
+import CourseView from './components/CourseView/CourseView'
 
 function App() {
   const [activeTab, setActiveTab] = useState('home')
@@ -10,6 +11,7 @@ function App() {
   const [recommendedCourses, setRecommendedCourses] = useState([])
   const [userCourses, setUserCourses] = useState([])
   const [learningPaths, setLearningPaths] = useState([])
+  const [selectedCourseId, setSelectedCourseId] = useState(null)
   
   // Login form state
   const [username, setUsername] = useState('')
@@ -85,6 +87,14 @@ function App() {
     }
   }
   
+  const handleCourseSelect = (courseId) => {
+    setSelectedCourseId(courseId);
+  }
+  
+  const handleBackFromCourse = () => {
+    setSelectedCourseId(null);
+  }
+  
   if (loading) {
     return <div className="loading">Loading...</div>;
   }
@@ -126,6 +136,100 @@ function App() {
               Login
             </button>
           </form>
+        </div>
+      </div>
+    );
+  }
+
+  // If a course is selected, show the course view
+  if (selectedCourseId) {
+    return (
+      <div className="app-container">
+        {/* Sidebar */}
+        <div className="sidebar">
+          <div className="logo">
+            <h2>LearnTech</h2>
+          </div>
+          <nav className="nav-menu">
+            <button 
+              className={`nav-item ${activeTab === 'home' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('home')
+                setSelectedCourseId(null)
+              }}
+            >
+              <Home size={20} />
+              <span>Home</span>
+            </button>
+            <button 
+              className={`nav-item ${activeTab === 'courses' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('courses')
+                setSelectedCourseId(null)
+              }}
+            >
+              <Book size={20} />
+              <span>Courses</span>
+            </button>
+            <button 
+              className={`nav-item ${activeTab === 'progress' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('progress')
+                setSelectedCourseId(null)
+              }}
+            >
+              <BarChart size={20} />
+              <span>My Progress</span>
+            </button>
+            <button 
+              className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('profile')
+                setSelectedCourseId(null)
+              }}
+            >
+              <User size={20} />
+              <span>Profile</span>
+            </button>
+            <button 
+              className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('settings')
+                setSelectedCourseId(null)
+              }}
+            >
+              <Settings size={20} />
+              <span>Settings</span>
+            </button>
+          </nav>
+          
+          <div className="sidebar-footer">
+            <button onClick={handleLogout} className="logout-button">Logout</button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="main-content">
+          {/* Header */}
+          <header className="header">
+            <div className="search-bar">
+              <Search size={20} />
+              <input type="text" placeholder="Search for courses, topics, or skills..." />
+            </div>
+            <div className="user-profile">
+              <span className="user-name">{user.first_name || user.username}</span>
+              <div className="avatar">
+                {user.first_name ? user.first_name[0] : user.username[0]}
+                {user.last_name ? user.last_name[0] : ''}
+              </div>
+            </div>
+          </header>
+
+          {/* Course View */}
+          <CourseView 
+            courseId={selectedCourseId}
+            onBackClick={handleBackFromCourse}
+          />
         </div>
       </div>
     );
@@ -211,14 +315,14 @@ function App() {
               </div>
               <div className="course-grid">
                 {recommendedCourses.length > 0 ? recommendedCourses.map((course) => (
-                  <div key={course.id} className="course-card">
+                  <div key={course.id} className="course-card" onClick={() => handleCourseSelect(course.id)}>
                     <div className="course-image" 
                       style={{backgroundColor: course.image_color || `hsl(${course.id * 60}, 70%, 80%)`}}
                     ></div>
                     <div className="course-content">
                       <span className="course-tag">AI Recommended</span>
                       <h3>{course.title}</h3>
-                      <p>{course.description}</p>
+                      <p>{course.description.substring(0, 80)}...</p>
                       <div className="course-meta">
                         <span>{course.rating} ★</span>
                         <span>{course.difficulty}</span>
@@ -269,10 +373,47 @@ function App() {
           </div>
         )}
 
-        {activeTab !== 'home' && (
+        {activeTab === 'courses' && (
+          <div className="content">
+            <h1>Courses</h1>
+            <p className="subtitle">Browse all available courses or search for specific topics</p>
+            
+            <div className="course-categories">
+              <button className="category-btn active">All Courses</button>
+              <button className="category-btn">Web Development</button>
+              <button className="category-btn">Data Science</button>
+              <button className="category-btn">Mobile Development</button>
+              <button className="category-btn">DevOps & Cloud</button>
+              <button className="category-btn">Cybersecurity</button>
+            </div>
+            
+            <div className="course-grid">
+              {recommendedCourses.length > 0 ? recommendedCourses.map((course) => (
+                <div key={course.id} className="course-card" onClick={() => handleCourseSelect(course.id)}>
+                  <div className="course-image" 
+                    style={{backgroundColor: course.image_color || `hsl(${course.id * 60}, 70%, 80%)`}}
+                  ></div>
+                  <div className="course-content">
+                    <h3>{course.title}</h3>
+                    <p>{course.description.substring(0, 80)}...</p>
+                    <div className="course-meta">
+                      <span>{course.rating} ★</span>
+                      <span>{course.difficulty}</span>
+                      <span>{course.duration}</span>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <p>No courses to show.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {(activeTab !== 'home' && activeTab !== 'courses') && (
           <div className="content placeholder-content">
             <h1>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
-            <p>This section is under development for the hackathon demo.</p>
+            <p>This section is under development.</p>
           </div>
         )}
       </div>
