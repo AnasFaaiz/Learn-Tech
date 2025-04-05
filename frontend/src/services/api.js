@@ -22,34 +22,46 @@ export const clearAuth = () => {
   delete apiClient.defaults.headers.common['Authorization'];
 };
 
-
+// Simplified error handling without CSRF concerns
 apiClient.interceptors.response.use(
   response => response,
   error => {
-    if (error.response && error.response.status === 403) {
-      // console.log(error.response.body)
-      console.log('Intercepted 403 error, may need to refresh CSRF token');
+    if (error.response) {
+      console.log(`Error ${error.response.status}: ${error.response.statusText}`);
+      
+      // Try to re-authenticate on 401/403 errors
+      if (error.response.status === 401 || error.response.status === 403) {
+        const username = localStorage.getItem('username');
+        const password = localStorage.getItem('password');
+        
+        if (username && password) {
+          setBasicAuth(username, password);
+        }
+      }
     }
     return Promise.reject(error);
   }
 );
 
-
+// Remove CSRF handling and rely solely on Basic Auth
 apiClient.interceptors.request.use(config => {
-  const csrfToken = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('csrftoken='))
-    ?.split('=')[1];
-  
-  if (csrfToken) {
-    config.headers['X-CSRFToken'] = csrfToken;
-  }
+  // Always ensure credentials are included
   config.withCredentials = true;
+  
+  // Ensure the auth header is present on each request
+  const username = localStorage.getItem('username');
+  const password = localStorage.getItem('password');
+  
+  if (username && password) {
+    const encodedCredentials = btoa(`${username}:${password}`);
+    config.headers['Authorization'] = `Basic ${encodedCredentials}`;
+  }
+  
   return config;
 });
 
 // Authentication services
-export const authService = {
+const authService = {
   login: async (username, password) => {
     try {
       // Set Basic Auth header
@@ -106,7 +118,7 @@ export const authService = {
 };
 
 // Course services
-export const courseService = {
+const courseService = {
   getRecommended: async () => {
     try {
       const response = await apiClient.get('/recommended/');
@@ -139,7 +151,6 @@ export const courseService = {
     }
   },
   
-  // New method to get a single course by ID
   getCourseById: async (courseId) => {
     try {
       const response = await apiClient.get(`/courses/${courseId}/`);
@@ -150,7 +161,6 @@ export const courseService = {
     }
   },
   
-  // Get course units
   getCourseUnits: async (courseId) => {
     try {
       const response = await apiClient.get(`/courses/${courseId}/units/`);
@@ -161,7 +171,40 @@ export const courseService = {
     }
   },
   
-  // Get unit topics
+  getCourseProgress: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/progress/`);
+      return response.data;
+    } catch (error) {
+      console.error('Get course progress error:', error);
+      throw error;
+    }
+  },
+  
+  markTopicCompleted: async (topicId) => {
+    try {
+      const response = await apiClient.post('/topics/mark-completed/', {
+        topic_id: topicId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Mark topic completed error:', error);
+      throw error;
+    }
+  },
+  
+  markUnitCompleted: async (unitId) => {
+    try {
+      const response = await apiClient.post('/units/mark-completed/', {
+        unit_id: unitId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Mark unit completed error:', error);
+      throw error;
+    }
+  },
+  
   getUnitTopics: async (unitId) => {
     try {
       const response = await apiClient.get(`/units/${unitId}/topics/`);
@@ -172,7 +215,6 @@ export const courseService = {
     }
   },
   
-  // Submit quiz answers
   submitQuiz: async (quizId, answers) => {
     try {
       const response = await apiClient.post(`/quizzes/${quizId}/submit/`, {
@@ -183,22 +225,11 @@ export const courseService = {
       console.error('Submit quiz error:', error);
       throw error;
     }
-  },
-  
-  // Mark unit as completed
-  markUnitCompleted: async (unitId) => {
-    try {
-      const response = await apiClient.post(`/units/${unitId}/complete/`);
-      return response.data;
-    } catch (error) {
-      console.error('Mark unit completed error:', error);
-      throw error;
-    }
   }
 };
 
 // Learning path services
-export const pathService = {
+const pathService = {
   getUserPaths: async () => {
     try {
       const response = await apiClient.get('/learning-paths/');
@@ -220,4 +251,88 @@ export const pathService = {
   }
 };
 
-export default apiClient;
+// Learning buddy services
+const buddyService = {
+  getLearningProfile: async () => {
+    try {
+      const response = await apiClient.get('/learning-profile/');
+      return response.data;
+    } catch (error) {
+      console.error('Get learning profile error:', error);
+      throw error;
+    }
+  },
+  
+  updateLearningProfile: async (profileData) => {
+    try {
+      const response = await apiClient.put('/learning-profile/update/', profileData);
+      return response.data;
+    } catch (error) {
+      console.error('Update learning profile error:', error);
+      throw error;
+    }
+  },
+  
+  getChatHistory: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/course/${courseId}/chat-history/`);
+      return response.data;
+    } catch (error) {
+      console.error('Get chat history error:', error);
+      throw error;
+    }
+  },
+  
+  sendMessage: async (courseId, message) => {
+    try {
+      const response = await apiClient.post('/learning-buddy/chat/', {
+        course_id: courseId,
+        message
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Send message error:', error);
+      throw error;
+    }
+  },
+  
+  startSession: async (courseId) => {
+    try {
+      const response = await apiClient.post('/course-session/start/', {
+        course_id: courseId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Start session error:', error);
+      throw error;
+    }
+  },
+  
+  endSession: async (sessionId) => {
+    try {
+      const response = await apiClient.post('/course-session/end/', {
+        session_id: sessionId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('End session error:', error);
+      throw error;
+    }
+  },
+  
+  saveQuizResult: async (courseId, quizData) => {
+    try {
+      const response = await apiClient.post('/learning-buddy/quiz-result/', {
+        course_id: courseId,
+        ...quizData
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Save quiz result error:', error);
+      throw error;
+    }
+  }
+};
+
+// Add the buddy service to your exports
+export { apiClient, authService, courseService, pathService, buddyService };

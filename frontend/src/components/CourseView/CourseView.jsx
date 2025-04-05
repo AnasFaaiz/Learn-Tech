@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { ArrowLeft, MessageCircle, CheckCircle, AlertCircle, Clock, Award, BookOpen, FileText, Code } from 'lucide-react'
 import { courseService } from '../../services/api'
 import './CourseView.css'
+import LearningBuddy from '../LearningBuddy/LearningBuddy'
 
 function CourseView({ courseId, onBackClick }) {
   const [course, setCourse] = useState(null)
+  const [units, setUnits] = useState([])
   const [activeUnit, setActiveUnit] = useState(null)
   const [activeTopic, setActiveTopic] = useState(null)
   const [viewMode, setViewMode] = useState('overview') // overview, lecture, quiz, project
@@ -12,62 +14,83 @@ function CourseView({ courseId, onBackClick }) {
   const [quizResults, setQuizResults] = useState(null)
   const [loading, setLoading] = useState(true)
   const [aiChatOpen, setAiChatOpen] = useState(false)
+  const [courseProgress, setCourseProgress] = useState(null)
+  const [sessionId, setSessionId] = useState(null)
 
   useEffect(() => {
-    async function fetchCourseDetails() {
+    async function fetchCourseData() {
       try {
         setLoading(true)
-        // In a real app, you'd fetch the full course details including units and topics
-        const courseData = await courseService.getCourseById(courseId)
+        
+        // Fetch course details and progress in parallel
+        const [courseData, progressData] = await Promise.all([
+          courseService.getCourseById(courseId),
+          courseService.getCourseProgress(courseId)
+        ])
+        
         setCourse(courseData)
+        setUnits(courseData.units || [])
+        setCourseProgress(progressData)
       } catch (error) {
-        console.error('Error fetching course details:', error)
+        console.error('Error fetching course data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchCourseDetails()
+    fetchCourseData()
   }, [courseId])
 
-  // Temporary mock data for UI demonstration
-  const mockUnits = [
-    {
-      id: 1,
-      title: "Introduction to the Course",
-      progress: 100,
-      completed: true,
-      topics: [
-        { id: 1, title: "Course Overview", completed: true },
-        { id: 2, title: "Setting Up Your Environment", completed: true },
-      ]
-    },
-    {
-      id: 2,
-      title: "Core Concepts",
-      progress: 75,
-      completed: false,
-      topics: [
-        { id: 3, title: "Fundamental Principles", completed: true },
-        { id: 4, title: "Practical Applications", completed: true },
-        { id: 5, title: "Advanced Techniques", completed: false },
-        { id: 6, title: "Best Practices", completed: false }
-      ]
-    },
-    {
-      id: 3,
-      title: "Building Your First Project",
-      progress: 0,
-      completed: false,
-      topics: [
-        { id: 7, title: "Project Setup", completed: false },
-        { id: 8, title: "Implementation", completed: false },
-        { id: 9, title: "Testing & Debugging", completed: false },
-        { id: 10, title: "Deployment", completed: false }
-      ]
+  useEffect(() => {
+    // Start tracking session when viewing a course
+    if (courseId && !sessionId) {
+      startCourseSession()
     }
-  ]
+    
+    // Clean up function to end the session when unmounting
+    return () => {
+      if (sessionId) {
+        endCourseSession()
+      }
+    }
+  }, [courseId])
 
+  const startCourseSession = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/course-session/start/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ course_id: courseId })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setSessionId(data.session_id)
+      }
+    } catch (error) {
+      console.error('Error starting course session:', error)
+    }
+  }
+
+  const endCourseSession = async () => {
+    try {
+      await fetch(`http://localhost:8000/api/course-session/end/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ session_id: sessionId })
+      })
+    } catch (error) {
+      console.error('Error ending course session:', error)
+    }
+  }
+
+  // The mock quiz remains for now, but would ideally come from the backend too
   const mockQuiz = {
     title: "Core Concepts Quiz",
     questions: [
@@ -107,16 +130,16 @@ function CourseView({ courseId, onBackClick }) {
     ]
   }
 
-  // Handler for marking a unit as "I know this"
   const handleMarkAsKnown = (unitId) => {
-    setActiveUnit(mockUnits.find(unit => unit.id === unitId))
+    const unit = units.find(u => u.id === unitId)
+    setActiveUnit(unit)
     setQuizInProgress(true)
     setViewMode('quiz')
   }
 
   // Handler for quiz submission
-  const handleSubmitQuiz = (answers) => {
-    // Calculate score (mock implementation)
+  const handleSubmitQuiz = async (answers) => {
+    // Calculate score
     const correctAnswers = mockQuiz.questions.filter((q, index) => 
       answers[index] === q.correctAnswer
     ).length
@@ -132,21 +155,37 @@ function CourseView({ courseId, onBackClick }) {
     
     setQuizInProgress(false)
     
-    // In a real app, you would update the unit's completion status based on the score
     if (score >= 70 && activeUnit) {
-      // Mark unit as completed (mock UI update)
-      const updatedUnits = mockUnits.map(unit => 
-        unit.id === activeUnit.id 
-          ? { ...unit, completed: true, progress: 100 } 
-          : unit
-      )
-      // This is just for the UI demo - in a real app you'd update the state with API calls
+      try {
+        // Mark the unit as completed in the backend
+        await courseService.markUnitCompleted(activeUnit.id)
+        
+        // Refresh course progress data
+        const progressData = await courseService.getCourseProgress(courseId)
+        setCourseProgress(progressData)
+        
+        // Save quiz results for learning buddy to analyze
+        await buddyService.saveQuizResult(courseId, {
+          quiz_topic: activeUnit.title,
+          score,
+          max_score: 100
+        });
+      } catch (error) {
+        console.error('Error updating unit completion:', error)
+      }
     }
   }
 
   const handleStartUnit = (unitId) => {
-    setActiveUnit(mockUnits.find(unit => unit.id === unitId))
-    setActiveTopic(mockUnits.find(unit => unit.id === unitId)?.topics[0] || null)
+    const unit = units.find(u => u.id === unitId)
+    setActiveUnit(unit)
+    
+    if (unit.topics && unit.topics.length > 0) {
+      setActiveTopic(unit.topics[0])
+    } else {
+      setActiveTopic(null)
+    }
+    
     setViewMode('lecture')
   }
 
@@ -156,49 +195,90 @@ function CourseView({ courseId, onBackClick }) {
     setViewMode('lecture')
   }
 
+  const handleMarkTopicCompleted = async (topicId) => {
+    try {
+      // Mark the topic as completed in the backend
+      await courseService.markTopicCompleted(topicId)
+      
+      // Refresh course progress data
+      const progressData = await courseService.getCourseProgress(courseId)
+      setCourseProgress(progressData)
+    } catch (error) {
+      console.error('Error marking topic completed:', error)
+    }
+  }
+
   if (loading) {
     return <div className="course-view-loading">Loading course content...</div>
+  }
+
+  // Helper function to get unit progress data
+  const getUnitProgressData = (unitId) => {
+    if (!courseProgress || !courseProgress.units) {
+      return { progress: 0, is_completed: false, topics: [] }
+    }
+    
+    const unitData = courseProgress.units.find(u => u.id === unitId)
+    return unitData || { progress: 0, is_completed: false, topics: [] }
+  }
+
+  // Helper function to check if a topic is completed
+  const isTopicCompleted = (topicId) => {
+    if (!courseProgress || !courseProgress.units) return false
+    
+    for (const unit of courseProgress.units) {
+      const topic = unit.topics.find(t => t.id === topicId)
+      if (topic && topic.is_completed) return true
+    }
+    
+    return false
   }
 
   const renderUnitsList = () => (
     <div className="course-units-list">
       <h2>Course Units</h2>
-      {mockUnits.map(unit => (
-        <div key={unit.id} className={`course-unit-card ${unit.completed ? 'completed' : ''}`}>
-          <div className="unit-header">
-            <h3>{unit.title}</h3>
-            <div className="unit-progress">
-              <div className="progress-bar">
-                <div className="progress" style={{ width: `${unit.progress}%` }}></div>
+      {units.map(unit => {
+        const unitProgress = getUnitProgressData(unit.id)
+        
+        return (
+          <div key={unit.id} className={`course-unit-card ${unitProgress.is_completed ? 'completed' : ''}`}>
+            <div className="unit-header">
+              <h3>{unit.title}</h3>
+              <div className="unit-progress">
+                <div className="progress-bar">
+                  <div className="progress" style={{ width: `${unitProgress.progress}%` }}></div>
+                </div>
+                <span>{unitProgress.progress}% complete</span>
               </div>
-              <span>{unit.progress}% complete</span>
+            </div>
+            
+            <div className="unit-actions">
+              <button 
+                className="start-unit-btn"
+                onClick={() => handleStartUnit(unit.id)}
+              >
+                {unitProgress.progress > 0 ? 'Continue Unit' : 'Start Unit'}
+              </button>
+              
+              {!unitProgress.is_completed && (
+                <button 
+                  className="know-this-btn"
+                  onClick={() => handleMarkAsKnown(unit.id)}
+                >
+                  I already know this
+                </button>
+              )}
             </div>
           </div>
-          
-          <div className="unit-actions">
-            <button 
-              className="start-unit-btn"
-              onClick={() => handleStartUnit(unit.id)}
-            >
-              {unit.progress > 0 ? 'Continue Unit' : 'Start Unit'}
-            </button>
-            
-            {!unit.completed && (
-              <button 
-                className="know-this-btn"
-                onClick={() => handleMarkAsKnown(unit.id)}
-              >
-                I already know this
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 
   const renderUnitContent = () => {
     if (!activeUnit) return null;
+    
+    const unitProgress = getUnitProgressData(activeUnit.id)
     
     switch (viewMode) {
       case 'lecture':
@@ -207,16 +287,20 @@ function CourseView({ courseId, onBackClick }) {
             <div className="unit-sidebar">
               <h3>Unit: {activeUnit.title}</h3>
               <div className="topics-list">
-                {activeUnit.topics.map(topic => (
-                  <button 
-                    key={topic.id}
-                    className={`topic-item ${topic.completed ? 'completed' : ''} ${activeTopic?.id === topic.id ? 'active' : ''}`}
-                    onClick={() => handleSelectTopic(topic.id)}
-                  >
-                    {topic.title}
-                    {topic.completed && <CheckCircle size={16} />}
-                  </button>
-                ))}
+                {activeUnit.topics && activeUnit.topics.map(topic => {
+                  const isCompleted = isTopicCompleted(topic.id)
+                  
+                  return (
+                    <button 
+                      key={topic.id}
+                      className={`topic-item ${isCompleted ? 'completed' : ''} ${activeTopic?.id === topic.id ? 'active' : ''}`}
+                      onClick={() => handleSelectTopic(topic.id)}
+                    >
+                      {topic.title}
+                      {isCompleted && <CheckCircle size={16} />}
+                    </button>
+                  )
+                })}
               </div>
               
               <div className="unit-navigation">
@@ -225,6 +309,13 @@ function CourseView({ courseId, onBackClick }) {
                   onClick={() => setViewMode('quiz')}
                 >
                   Take Unit Quiz
+                </button>
+                <button 
+                  className="buddy-button"
+                  onClick={() => setAiChatOpen(true)}
+                >
+                  <MessageCircle size={16} />
+                  Learning Buddy
                 </button>
                 <button
                   className="back-button"
@@ -252,8 +343,7 @@ function CourseView({ courseId, onBackClick }) {
                   </div>
                   
                   <div className="lecture-content">
-                    {/* Mock lecture content */}
-                    <p>This is the lecture content for {activeTopic.title}. In a real application, this would include videos, interactive elements, and more detailed explanations.</p>
+                    <div dangerouslySetInnerHTML={{ __html: activeTopic.content }} />
                     
                     <h3>Key Points</h3>
                     <ul>
@@ -281,6 +371,15 @@ function CourseView({ courseId, onBackClick }) {
   return handleError();
 }`}</code></pre>
                     </div>
+                    
+                    {!isTopicCompleted(activeTopic.id) && (
+                      <button 
+                        className="mark-completed-btn"
+                        onClick={() => handleMarkTopicCompleted(activeTopic.id)}
+                      >
+                        Mark as Completed
+                      </button>
+                    )}
                   </div>
                 </>
               ) : (
@@ -431,7 +530,7 @@ function CourseView({ courseId, onBackClick }) {
                 <BookOpen size={24} />
                 <div className="stat-text">
                   <h4>Units</h4>
-                  <p>{mockUnits.length} course units</p>
+                  <p>{units.length} course units</p>
                 </div>
               </div>
               <div className="stat-item">
@@ -468,13 +567,13 @@ function CourseView({ courseId, onBackClick }) {
                   stroke="#7e57c2" 
                   strokeWidth="12" 
                   strokeDasharray="339.3"
-                  strokeDashoffset={339.3 * (1 - 0.33)} // 33% complete (mockup)
+                  strokeDashoffset={339.3 * (1 - (courseProgress?.overall_progress || 0) / 100)}
                   transform="rotate(-90 60 60)"
                 />
               </svg>
-              <div className="progress-text">33%</div>
+              <div className="progress-text">{courseProgress?.overall_progress || 0}%</div>
             </div>
-            <p>1 of 3 units completed</p>
+            <p>{courseProgress?.completed_units || 0} of {units.length} units completed</p>
           </div>
           
           <div className="learning-paths-card">
@@ -491,43 +590,17 @@ function CourseView({ courseId, onBackClick }) {
             onClick={() => setAiChatOpen(true)}
           >
             <MessageCircle size={18} />
-            Discuss with AI Assistant
+            Chat with Learning Buddy
           </button>
         </div>
       </div>
-      
-      {aiChatOpen && (
-        <div className="ai-chat-modal">
-          <div className="ai-chat-container">
-            <div className="chat-header">
-              <h3>AI Learning Assistant</h3>
-              <button onClick={() => setAiChatOpen(false)}>×</button>
-            </div>
-            <div className="chat-messages">
-              <div className="message ai">
-                <div className="message-content">
-                  <p>Hello! I'm your AI learning assistant for this course. How can I help you today?</p>
-                </div>
-              </div>
-              <div className="message user">
-                <div className="message-content">
-                  <p>Can you explain the concept from Unit 2 in more detail?</p>
-                </div>
-              </div>
-              <div className="message ai">
-                <div className="message-content">
-                  <p>Of course! Unit 2 covers Core Concepts, which includes fundamental principles and practical applications.</p>
-                  <p>The key idea is to understand how these principles work together to create robust solutions. Would you like me to elaborate on a specific topic within this unit?</p>
-                </div>
-              </div>
-            </div>
-            <div className="chat-input">
-              <input type="text" placeholder="Ask a question about this course..." />
-              <button>Send</button>
-            </div>
-          </div>
-        </div>
-      )}
+
+      {/* Replace the old AI chat modal with our new Learning Buddy component */}
+      <LearningBuddy
+        courseId={courseId}
+        isOpen={aiChatOpen}
+        onClose={() => setAiChatOpen(false)}
+      />
     </div>
   )
 
