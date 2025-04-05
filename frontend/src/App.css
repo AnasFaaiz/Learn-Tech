@@ -264,6 +264,10 @@ body {
   font-weight: 500;
 }
 
+.avatar-container {
+  position: relative;
+}
+
 .avatar {
   width: 40px;
   height: 40px;
@@ -274,6 +278,25 @@ body {
   justify-content: center;
   color: white;
   font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Update profile avatar styles */
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 2.5rem;
+  background-size: cover;
+  background-position: center;
 }
 
 /* Content Area */
@@ -739,12 +762,12 @@ h1 {
     border-color: #1e1e1e;
     background-color: #303030;
   }
-  
   .form-group input {
     border-color: #333;
     background-color: #242424;
     color: var(--text-primary);
   }
+
 
   .category-btn {
     background-color: #242424;
@@ -757,4 +780,68 @@ h1 {
     color: white;
     border-color: var(--primary-light);
   }
+
+}
+
+/* Add new profile dropdown styles */
+.profile-dropdown {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  min-width: 200px;
+  z-index: 100;
+  animation: dropdown-fade 0.2s ease;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background-color: var(--hover-bg);
+  color: var(--primary-color);
+}
+
+.dropdown-item:first-child {
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.dropdown-item:last-child {
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  border-top: 1px solid var(--border-color);
+}
+
+@keyframes dropdown-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Add click-outside handling */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+
 }
