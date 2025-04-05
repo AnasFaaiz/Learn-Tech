@@ -1,3 +1,60 @@
-/.env
+# Dependencies
 /node_modules
+/frontend/node_modules
+/.pnp
+.pnp.js
 
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+
+# Python/Django
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+db.sqlite3
+media/
+
+# IDE and Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# Cache directories
+.npm
+.eslintcache
+.next
+.nuxt
+.cache
+
+# Local Netlify folder
+.netlify
+
+# Optional
+*.bak
+*.tmp
+.env.*
