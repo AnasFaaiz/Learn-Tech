@@ -655,6 +655,7 @@ h1 {
   }
 }
 
+
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   :root {
