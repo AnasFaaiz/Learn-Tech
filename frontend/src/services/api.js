@@ -137,6 +137,63 @@ export const courseService = {
       console.error('Update course progress error:', error);
       throw error;
     }
+  },
+  
+  // New method to get a single course by ID
+  getCourseById: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Get course details error:', error);
+      throw error;
+    }
+  },
+  
+  // Get course units
+  getCourseUnits: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/units/`);
+      return response.data;
+    } catch (error) {
+      console.error('Get course units error:', error);
+      throw error;
+    }
+  },
+  
+  // Get unit topics
+  getUnitTopics: async (unitId) => {
+    try {
+      const response = await apiClient.get(`/units/${unitId}/topics/`);
+      return response.data;
+    } catch (error) {
+      console.error('Get unit topics error:', error);
+      throw error;
+    }
+  },
+  
+  // Submit quiz answers
+  submitQuiz: async (quizId, answers) => {
+    try {
+      const response = await apiClient.post(`/quizzes/${quizId}/submit/`, {
+        answers
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Submit quiz error:', error);
+      throw error;
+    }
+  },
+  
+  // Mark unit as completed
+  markUnitCompleted: async (unitId) => {
+    try {
+      const response = await apiClient.post(`/units/${unitId}/complete/`);
+      return response.data;
+    } catch (error) {
+      console.error('Mark unit completed error:', error);
+      throw error;
+    }
   }
 };
 
@@ -160,6 +217,36 @@ export const pathService = {
       console.error('Get milestones error:', error);
       throw error;
     }
+  }
+};
+
+// Add this function to your existing api service
+export const updateProfileImage = async (imageFile) => {
+  try {
+    const formData = new FormData();
+    formData.append('profileImage', imageFile);
+
+    const response = await fetch('http://localhost:8000/api/user/profile-image/', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',  // Important for sending cookies
+      headers: {
+        // Don't set Content-Type here - it will be set automatically with boundary
+        'Accept': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Server response:', response.status, errorData);
+      throw new Error(`Upload failed: ${errorData.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.imageUrl;
+  } catch (error) {
+    console.error('Profile image upload error:', error);
+    throw error;
   }
 };
 
