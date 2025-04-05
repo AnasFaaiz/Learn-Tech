@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import { Book, Home, User, BarChart, Settings, Search, Award, X } from 'lucide-react';
+import { Book, Home, User, BarChart, Settings, Search, Award, X, Menu } from 'lucide-react';
 
 function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -25,6 +25,7 @@ function App() {
     },
   ]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // State to toggle sidebar
 
   const [courses] = useState([
     {
@@ -49,17 +50,6 @@ function App() {
       duration: '12h 45m',
       progress: 0,
     },
-    ...Array.from({ length: 40 }, (_, i) => ({
-      id: i + 6,
-      title: `Course ${i + 6}`,
-      description: `Description for Course ${i + 6}`,
-      image: 'https://via.placeholder.com/300x200',
-      tag: i % 2 === 0 ? 'Popular' : 'New',
-      rating: `${(Math.random() * 1 + 4).toFixed(1)} ★`,
-      level: i % 3 === 0 ? 'Beginner' : i % 3 === 1 ? 'Intermediate' : 'Advanced',
-      duration: `${Math.floor(Math.random() * 10) + 5}h ${Math.floor(Math.random() * 60)}m`,
-      progress: 0,
-    })),
   ]);
 
   const recommendedCourses = courses.filter(
@@ -106,6 +96,10 @@ function App() {
     setIsModalOpen(!isModalOpen);
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen); // Toggle the sidebar state
+  };
+
   const calculateProgress = () => {
     const totalCourses = learningPath.length;
     const completedCourses = learningPath.filter((course) => course.status === 'completed').length;
@@ -116,9 +110,12 @@ function App() {
   return (
     <div className="app-container">
       {/* Sidebar */}
-      <div className="sidebar">
+      <div className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
         <div className="logo">
           <h2>LearnTech</h2>
+          <button className="toggle-sidebar-btn" onClick={toggleSidebar}>
+            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
         <nav className="nav-menu">
           <button
@@ -167,7 +164,7 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <div className="main-content">
+      <div className={`main-content ${isSidebarOpen ? 'with-sidebar' : 'without-sidebar'}`}>
         {/* Header */}
         <header className="header">
           <div className="search-bar">
