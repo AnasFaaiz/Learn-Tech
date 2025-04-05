@@ -24,9 +24,6 @@ export const LoginForm = ({ onLogin }) => {
 
   return (
     <div className="login-container">
-      <button className="register-link-button" onClick={handleRegister}>
-        Register
-      </button>
       <div className="login-form">
         <h1>LearnTech</h1>
         <p>AI-Powered Personalized Learning Platform</p>
@@ -61,6 +58,9 @@ export const LoginForm = ({ onLogin }) => {
             Login
           </button>
         </form>
+      </div>
+      <div className="register-button" onClick={handleRegister}>
+        register
       </div>
     </div>
   );

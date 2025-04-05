@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
-import { Book, Home, User, BarChart, Settings, Search, LogIn } from 'lucide-react'
 import { courseService, pathService, authService } from './services/api'
 import { LoginForm } from './components/auth/LoginForm'
 import { RegisterForm } from './components/auth/RegisterForm'
 import { Sidebar } from './components/navigation/Sidebar'
 import { Header } from './components/navigation/Header'
 import { HomePage } from './components/pages/HomePage'
+import Chatbot from './components/chatbot/chatbot'
+import { Book, Home, User, BarChart, Settings, Search, Bookmark, Award, MessageCircle, X } from 'lucide-react'
 
 function App() {
   const [activeTab, setActiveTab] = useState('home')
@@ -16,7 +17,8 @@ function App() {
   const [recommendedCourses, setRecommendedCourses] = useState([])
   const [userCourses, setUserCourses] = useState([])
   const [learningPaths, setLearningPaths] = useState([])
-  
+  const [isChatbotVisible, setIsChatbotVisible] = useState(false)
+
   useEffect(() => {
     async function checkAuthStatus() {
       try {
@@ -86,10 +88,15 @@ function App() {
     try {
       await authService.logout();
       setUser(null);
+      setIsChatbotVisible(false);
     } catch (error) {
       console.error('Logout error:', error);
     }
   }
+
+  const toggleChatbot = () => {
+    setIsChatbotVisible(!isChatbotVisible);
+  };
   
   if (loading) {
     return <div className="loading">Loading...</div>;
@@ -106,7 +113,10 @@ function App() {
               onLogout={handleLogout} 
             />
             <div className="main-content">
-              <Header user={user} />
+              <Header 
+                user={user} 
+                onToggleChat={toggleChatbot}
+              />
               {activeTab === 'home' && (
                 <HomePage 
                   user={user}
@@ -115,6 +125,21 @@ function App() {
                 />
               )}
               {/* Other tab content will be added here */}
+              {!isChatbotVisible && (
+                <button className="chat-toggle" onClick={toggleChatbot}>
+                  <MessageCircle size={24} />
+                </button>
+              )}
+              {isChatbotVisible && (
+                <Chatbot 
+                  initialMessage={`Hi, I'm here to help you with your learning journey. 
+                    Your current progress: 
+                    - Course: ${userCourses[0]?.title || 'No active course'}
+                    - Progress: ${userCourses[0]?.progress || 0}%
+                    What would you like to know?`}
+                  onClose={toggleChatbot}
+                />
+              )}
             </div>
           </>
         ) : (
