@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import './App.css';
-import { Book, Home, User, BarChart, Settings, Search, Award, X } from 'lucide-react';
+import { Book, Home, User, BarChart, Settings, Search, Award, X, Menu } from 'lucide-react';
 
 function App() {
   const [activeTab, setActiveTab] = useState('home');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // State to toggle sidebar
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for Add Course modal
   const [learningPath, setLearningPath] = useState([
     {
       id: 1,
@@ -24,7 +26,6 @@ function App() {
       description: 'Unlocks after completing "Data Structures & Algorithms"',
     },
   ]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [courses] = useState([
     {
@@ -49,17 +50,6 @@ function App() {
       duration: '12h 45m',
       progress: 0,
     },
-    ...Array.from({ length: 40 }, (_, i) => ({
-      id: i + 6,
-      title: `Course ${i + 6}`,
-      description: `Description for Course ${i + 6}`,
-      image: 'https://via.placeholder.com/300x200',
-      tag: i % 2 === 0 ? 'Popular' : 'New',
-      rating: `${(Math.random() * 1 + 4).toFixed(1)} ★`,
-      level: i % 3 === 0 ? 'Beginner' : i % 3 === 1 ? 'Intermediate' : 'Advanced',
-      duration: `${Math.floor(Math.random() * 10) + 5}h ${Math.floor(Math.random() * 60)}m`,
-      progress: 0,
-    })),
   ]);
 
   const recommendedCourses = courses.filter(
@@ -69,6 +59,21 @@ function App() {
   const allCourses = courses.filter(
     (course) => !learningPath.some((pathCourse) => pathCourse.id === course.id)
   );
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen); // Toggle the sidebar state
+  };
+
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen);
+  };
+
+  const calculateProgress = () => {
+    const totalCourses = learningPath.length;
+    const completedCourses = learningPath.filter((course) => course.status === 'completed').length;
+    const currentCourseIndex = learningPath.findIndex((course) => course.status === 'current');
+    return ((completedCourses + (currentCourseIndex !== -1 ? 0.5 : 0)) / totalCourses) * 100;
+  };
 
   const handleAddCourse = (courseId) => {
     const isAlreadyAdded = learningPath.some((course) => course.id === courseId);
@@ -102,23 +107,15 @@ function App() {
     }
   };
 
-  const toggleModal = () => {
-    setIsModalOpen(!isModalOpen);
-  };
-
-  const calculateProgress = () => {
-    const totalCourses = learningPath.length;
-    const completedCourses = learningPath.filter((course) => course.status === 'completed').length;
-    const currentCourseIndex = learningPath.findIndex((course) => course.status === 'current');
-    return ((completedCourses + (currentCourseIndex !== -1 ? 0.5 : 0)) / totalCourses) * 100;
-  };
-
   return (
     <div className="app-container">
       {/* Sidebar */}
-      <div className="sidebar">
+      <div className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
         <div className="logo">
           <h2>LearnTech</h2>
+          <button className="toggle-sidebar-btn" onClick={toggleSidebar}>
+            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
         <nav className="nav-menu">
           <button
@@ -167,7 +164,7 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <div className="main-content">
+      <div className={`main-content ${isSidebarOpen ? 'with-sidebar' : 'without-sidebar'}`}>
         {/* Header */}
         <header className="header">
           <div className="search-bar">
@@ -185,38 +182,6 @@ function App() {
           <div className="content">
             <h1>Welcome back, John!</h1>
             <p className="subtitle">Pick up where you left off or explore new topics</p>
-
-            {/* Recommended Courses Section */}
-            <section className="recommended-section">
-              <div className="section-header">
-                <h2>Recommended for You</h2>
-                <button className="see-all">See All</button>
-              </div>
-              <div className="course-grid">
-                {recommendedCourses.map((course) => (
-                  <div key={course.id} className="course-card">
-                    <div
-                      className="course-image"
-                      style={{
-                        backgroundImage: `url(${course.image})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                      }}
-                    ></div>
-                    <div className="course-content">
-                      <span className="course-tag">{course.tag}</span>
-                      <h3>{course.title}</h3>
-                      <p>{course.description}</p>
-                      <div className="course-meta">
-                        <span>{course.rating}</span>
-                        <span>{course.level}</span>
-                        <span>{course.duration}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
 
             {/* Learning Path Section */}
             <section className="learning-path-section">
