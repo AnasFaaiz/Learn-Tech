@@ -662,6 +662,49 @@ h1 {
   }
 }
 
+.course-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 2rem;
+}
+
+.category-btn {
+  padding: 0.6rem 1.2rem;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.category-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.category-btn.active {
+  background-color: #7e57c2;
+  color: white;
+  border-color: #7e57c2;
+}
+
+.course-card {
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.course-image {
+  height: 160px;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  background-color: var(--primary-color);
+}
+
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   :root {

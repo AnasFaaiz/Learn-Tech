@@ -137,6 +137,63 @@ export const courseService = {
       console.error('Update course progress error:', error);
       throw error;
     }
+  },
+  
+  // New method to get a single course by ID
+  getCourseById: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Get course details error:', error);
+      throw error;
+    }
+  },
+  
+  // Get course units
+  getCourseUnits: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/units/`);
+      return response.data;
+    } catch (error) {
+      console.error('Get course units error:', error);
+      throw error;
+    }
+  },
+  
+  // Get unit topics
+  getUnitTopics: async (unitId) => {
+    try {
+      const response = await apiClient.get(`/units/${unitId}/topics/`);
+      return response.data;
+    } catch (error) {
+      console.error('Get unit topics error:', error);
+      throw error;
+    }
+  },
+  
+  // Submit quiz answers
+  submitQuiz: async (quizId, answers) => {
+    try {
+      const response = await apiClient.post(`/quizzes/${quizId}/submit/`, {
+        answers
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Submit quiz error:', error);
+      throw error;
+    }
+  },
+  
+  // Mark unit as completed
+  markUnitCompleted: async (unitId) => {
+    try {
+      const response = await apiClient.post(`/units/${unitId}/complete/`);
+      return response.data;
+    } catch (error) {
+      console.error('Mark unit completed error:', error);
+      throw error;
+    }
   }
 };
 
