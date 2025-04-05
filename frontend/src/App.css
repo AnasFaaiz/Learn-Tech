@@ -661,7 +661,6 @@ h1 {
     width: 90%;
   }
 }
-<<<<<<< HEAD:src/App.css
 /* Update sidebar styles */
 .sidebar {
   width: 240px;
@@ -726,38 +725,4 @@ h1 {
 
 .sidebar.closed .logo h2 {
   display: none;
-=======
-
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-color: #121212;
-    --card-bg: #1e1e1e;
-    --text-primary: #e1e1e1;
-    --text-secondary: #a0a0a0;
-  }
-  
-  .search-bar {
-    background-color: rgba(255, 255, 255, 0.08);
-  }
-  
-  .progress-bar {
-    background-color: #303030;
-  }
-  
-  .path-line {
-    background-color: #303030;
-  }
-  
-  .milestone-dot {
-    border-color: #1e1e1e;
-    background-color: #303030;
-  }
-  
-  .form-group input {
-    border-color: #333;
-    background-color: #242424;
-    color: var(--text-primary);
-  }
->>>>>>> dce897fa510d3ffe43b71c46bfe93358cc7f7906:frontend/src/App.css
 }
