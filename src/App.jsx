@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import './App.css'
-import { Book, Home, User, BarChart, Settings, Search, Bookmark, Award } from 'lucide-react'
+import { Book, Home, User, BarChart, Settings, Search, Bookmark, Award, MessageCircle, X } from 'lucide-react'
+import Chatbot from './components/chatbot'
 
 function App() {
   const [activeTab, setActiveTab] = useState('home')
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   return (
     <div className="app-container">
@@ -149,6 +151,22 @@ function App() {
             <p>This section is under development for the hackathon demo.</p>
           </div>
         )}
+      </div>
+
+      <div className="chatbot-container">
+      <button 
+        className="chat-toggle"
+        onClick={() => setIsChatOpen(!isChatOpen)}
+      >
+        {isChatOpen ? <X size={24} /> : <MessageCircle size={24} />}
+      </button>
+
+      {/* Chatbot Component */}
+      {isChatOpen && (
+        <div className="chatbot-wrapper">
+          <Chatbot />
+        </div>
+      )}
       </div>
     </div>
   )
