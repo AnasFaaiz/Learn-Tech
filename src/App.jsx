@@ -6,6 +6,12 @@ import Chatbot from './components/chatbot'
 function App() {
   const [activeTab, setActiveTab] = useState('home')
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [initialMessage, setInitialMessage] = useState('')
+
+  const handleRecommendClick = () => {
+    setIsChatOpen(true);
+    setInitialMessage('Analyze my learning progress');
+  };
 
   return (
     <div className="app-container">
@@ -164,9 +170,19 @@ function App() {
       {/* Chatbot Component */}
       {isChatOpen && (
         <div className="chatbot-wrapper">
-          <Chatbot />
+          <Chatbot initialMessage={initialMessage} />
         </div>
       )}
+      </div>
+
+      <div className="Recommendations">
+        <button 
+          className="recommend-course"
+          onClick={handleRecommendClick}
+        >
+          <Award size={18} />
+          Recommend
+        </button>
       </div>
     </div>
   )

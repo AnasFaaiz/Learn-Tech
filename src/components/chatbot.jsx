@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const styles = {
   container: {
-    width: '400px',
-    height: '600px',
+    width: '600px',
+    height: '550px',
     border: '1px solid #ccc',
     borderRadius: '8px',
     display: 'flex',
@@ -146,13 +146,64 @@ const styles = {
 
 const BACKEND_URL = 'http://localhost:5000';
 
-const Chatbot = () => {
+const Chatbot = ({ initialMessage }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [connectionError, setConnectionError] = useState(null);
   const [isServerOnline, setIsServerOnline] = useState(false);
   const messagesEndRef = useRef(null);
+
+
+
+  useEffect(() => {
+    if (initialMessage && isServerOnline) {
+      const sendInitialMessage = async () => {
+        setIsLoading(true);
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/recommend`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              message: initialMessage,
+              userProgress: {
+                completedCourses: ['Programming Fundamentals'],
+                currentCourse: 'Data Structures & Algorithms',
+                progress: 65,
+                skillLevel: 'intermediate'
+              }
+            }),
+          });
+
+          if (!response.ok) throw new Error('Failed to get recommendations');
+          
+          const data = await response.json();
+          setMessages([
+            { 
+              text: "Analyzing your progress...",
+              sender: 'bot',
+              type: 'loading'
+            },
+            { 
+              text: data.response,
+              sender: 'bot',
+              type: 'recommendation'
+            }
+          ]);
+        } catch (error) {
+          console.error('Error:', error);
+          setConnectionError('Failed to get recommendations');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      sendInitialMessage();
+    }
+  }, [initialMessage, isServerOnline]);
+
 
   // Check backend connection on component mount and every 30 seconds
   useEffect(() => {

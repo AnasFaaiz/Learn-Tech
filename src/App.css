@@ -355,6 +355,49 @@ h2 {
   bottom: 6rem;
   right: 2rem;
   z-index: 1000;
+  margin-top: 10px;
+}
+
+/* Recommendations Button Styles */
+.Recommendations {
+  position: fixed;
+  top: calc(var(--header-height) + 1rem);
+  bottom: 2rem;
+  Right: 20px;
+  z-index: 999;
+}
+
+.recommend-course {
+  padding: 0.8rem 1.5rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  top: 0px;
+}
+
+.recommend-course:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(126, 87, 194, 0.3);
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+}
+
+.recommend-course:active {
+  transform: translateY(1px);
+}
+
+/* Adjust chatbot z-index to be higher */
+.chatbot-container {
+  z-index: 1000;
 }
 
 /* Responsive adjustments */

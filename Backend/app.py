@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from recommendation_service import get_course_recommendations
 
 # Configure logging
 logging.basicConfig(
@@ -37,6 +38,26 @@ CORS(app, resources={
     }
 })
 
+
+@app.route('/api/recommend', methods=['POST'])
+def recommend():
+    try:
+        data = request.get_json()
+        user_progress = data.get('userProgress', {})
+        
+        # Get recommendations using the service
+        result = get_course_recommendations(user_progress)
+        
+        if result['status'] == 'success':
+            return jsonify({'response': result['recommendations']})
+        else:
+            raise Exception(result['message'])
+            
+    except Exception as e:
+        logging.error(f"Recommendation error: {e}")
+        return jsonify({'error': str(e)}), 500
+    
+    
 @app.route('/api/chat', methods=['POST'])
 def chat():
     try:
