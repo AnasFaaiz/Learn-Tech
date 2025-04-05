@@ -220,4 +220,34 @@ export const pathService = {
   }
 };
 
+// Add this function to your existing api service
+export const updateProfileImage = async (imageFile) => {
+  try {
+    const formData = new FormData();
+    formData.append('profileImage', imageFile);
+
+    const response = await fetch('http://localhost:8000/api/user/profile-image/', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',  // Important for sending cookies
+      headers: {
+        // Don't set Content-Type here - it will be set automatically with boundary
+        'Accept': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Server response:', response.status, errorData);
+      throw new Error(`Upload failed: ${errorData.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.imageUrl;
+  } catch (error) {
+    console.error('Profile image upload error:', error);
+    throw error;
+  }
+};
+
 export default apiClient;
