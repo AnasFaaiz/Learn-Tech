@@ -17,12 +17,33 @@ genai.configure(api_key=api_key)
 # Function to query the Gemini API
 def ask_gemini(prompt):
     formatted_prompt = f"""
-    Answer this question in 1-2 short sentences: {prompt}
-    After your answer, suggest 3 related follow-up questions, each on a new line starting with '•'.
+    🎯 Main Response:
+    Please provide a clear and concise answer to: {prompt}
+    (Respond in 1-2 short sentences)
+
+    🔍 Follow-up Questions:
+    Generate 3 engaging follow-up questions that explore related topics.
+    Format each question with a '→' bullet and add relevant emojis.
     """
+    
     model = genai.GenerativeModel("gemini-1.5-flash")
     response = model.generate_content(formatted_prompt)
-    return response.text
+    
+    # Format the response with line breaks and styling
+    raw_response = response.text
+    parts = raw_response.split('\n')
+    
+    # Clean and format the response with markdown
+    formatted_response = "\n".join([
+        "## \n",
+        parts[0].strip(),
+        "\n---\n",
+        "## \n📚 Related Questions\n",
+        *[f"• {q.strip().strip('•').strip()}\n" for q in parts[1:] if q.strip()],
+        "\n---\n"
+    ])
+    
+    return formatted_response
 
 # Example usage
 if __name__ == "__main__":

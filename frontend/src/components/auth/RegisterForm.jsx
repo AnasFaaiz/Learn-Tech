@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
 
 export const RegisterForm = ({ onRegister }) => {
   const [formData, setFormData] = useState({
@@ -9,12 +10,7 @@ export const RegisterForm = ({ onRegister }) => {
     password: '',
     confirmPassword: '',
     firstName: '',
-    lastName: '',
-    preferences: {
-      projects: 4,
-      videos: 3,
-      books: 3
-    }
+    lastName: ''
   });
   const [registerError, setRegisterError] = useState('');
   const navigate = useNavigate();
@@ -31,51 +27,11 @@ export const RegisterForm = ({ onRegister }) => {
     }));
   };
 
-  const handlePreferenceChange = (type, value) => {
-    const newPreferences = { ...formData.preferences, [type]: value };
-    const total = Object.values(newPreferences).reduce((sum, val) => sum + val, 0);
-    
-    // If total exceeds 10, adjust other values proportionally
-    if (total > 10) {
-      const otherTypes = Object.keys(newPreferences).filter(t => t !== type);
-      const remainingUnits = 10 - newPreferences[type];
-      
-      if (remainingUnits >= 0) {
-        // Distribute remaining units between other types
-        const currentOtherTotal = otherTypes.reduce((sum, t) => sum + newPreferences[t], 0);
-        
-        if (currentOtherTotal > 0) {
-          otherTypes.forEach(t => {
-            newPreferences[t] = Math.round((newPreferences[t] / currentOtherTotal) * remainingUnits);
-          });
-          
-          // Adjust for rounding errors
-          const finalTotal = Object.values(newPreferences).reduce((sum, val) => sum + val, 0);
-          if (finalTotal !== 10) {
-            newPreferences[otherTypes[0]] += 10 - finalTotal;
-          }
-        } else {
-          // Split remaining units equally
-          const equalShare = Math.floor(remainingUnits / otherTypes.length);
-          otherTypes.forEach(t => {
-            newPreferences[t] = equalShare;
-          });
-          // Add remainder to first type
-          newPreferences[otherTypes[0]] += remainingUnits - (equalShare * otherTypes.length);
-        }
-      }
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      preferences: newPreferences
-    }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setRegisterError('');
 
+    // Basic validation
     if (formData.password !== formData.confirmPassword) {
       setRegisterError('Passwords do not match');
       return;
@@ -83,6 +39,7 @@ export const RegisterForm = ({ onRegister }) => {
 
     try {
       await onRegister(formData);
+      // Registration successful, navigate to login
       navigate('/login');
     } catch (error) {
       setRegisterError(error.message || 'Registration failed');
@@ -172,72 +129,22 @@ export const RegisterForm = ({ onRegister }) => {
             />
           </div>
 
-          <div className="preferences-section">
-            <h3>Learning Preferences</h3>
-            <p className="preferences-info">Select boxes to indicate your preferred learning style (total must be 10 boxes)</p>
+          <div className="preference-container">
             
-            <div className="preference-group">
-              <label>
-                Projects ({formData.preferences.projects} units)
-                <div className="preference-boxes-container">
-                  {[...Array(10)].map((_, index) => (
-                    <div
-                      key={`projects-${index}`}
-                      className={`preference-box projects ${index < formData.preferences.projects ? 'active' : ''}`}
-                      onClick={() => handlePreferenceChange('projects', index + 1)}
-                    />
-                  ))}
-                </div>
-              </label>
-            </div>
-
-            <div className="preference-group">
-              <label>
-                Video Tutorials ({formData.preferences.videos} units)
-                <div className="preference-boxes-container">
-                  {[...Array(10)].map((_, index) => (
-                    <div
-                      key={`videos-${index}`}
-                      className={`preference-box videos ${index < formData.preferences.videos ? 'active' : ''}`}
-                      onClick={() => handlePreferenceChange('videos', index + 1)}
-                    />
-                  ))}
-                </div>
-              </label>
-            </div>
-
-            <div className="preference-group">
-              <label>
-                Reading Materials ({formData.preferences.books} units)
-                <div className="preference-boxes-container">
-                  {[...Array(10)].map((_, index) => (
-                    <div
-                      key={`books-${index}`}
-                      className={`preference-box books ${index < formData.preferences.books ? 'active' : ''}`}
-                      onClick={() => handlePreferenceChange('books', index + 1)}
-                    />
-                  ))}
-                </div>
-              </label>
-            </div>
-
-            <div className="total-units">
-              Total: {Object.values(formData.preferences).reduce((sum, val) => sum + val, 0)} / 10 units
-            </div>
           </div>
           
           <button type="submit" className="register-button">
             <UserPlus size={18} />
             Create Account
           </button>
-
-          <div className="auth-switch">
-            Already have an account?{' '}
-            <button className="link-button" onClick={handleLogin}>
-              Login here
-            </button>
-          </div>
         </form>
+
+        <div className="auth-switch">
+          Already have an account?{' '}
+          <button className="link-button" onClick={handleLogin}>
+            Login here
+          </button>
+        </div>
       </div>
     </div>
   );
