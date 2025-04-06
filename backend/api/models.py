@@ -18,6 +18,46 @@ class Course(models.Model):
     def __str__(self):
         return self.title
 
+class Unit(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='units')
+    title = models.CharField(max_length=200)
+    order = models.IntegerField()  # To maintain the order of units within a course
+    description = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ['order']
+        unique_together = ['course', 'order']
+    
+    def __str__(self):
+        return f"{self.course.title} - Unit {self.order}: {self.title}"
+
+class Topic(models.Model):
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='topics')
+    title = models.CharField(max_length=200)
+    order = models.IntegerField()  # To maintain the order of topics within a unit
+    content = models.TextField()
+    video_url = models.URLField(blank=True, null=True)
+    code_example = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ['order']
+        unique_together = ['unit', 'order']
+    
+    def __str__(self):
+        return f"{self.unit.title} - Topic {self.order}: {self.title}"
+
+class UserTopic(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ['user', 'topic']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.topic.title} - {'Completed' if self.is_completed else 'In Progress'}"
+
 class UserCourse(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
@@ -51,4 +91,4 @@ class PathMilestone(models.Model):
         ordering = ['order']
     
     def __str__(self):
-        return self.title
+        return f"{self.learning_path.name} - {self.title}"

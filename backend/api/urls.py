@@ -17,4 +17,6 @@ urlpatterns = [
     path('auth/login/', views.custom_login, name='custom-login'),
     path('auth/logout/', views.custom_logout, name='custom-logout'),
     path('auth/csrf-token/', views.get_csrf_token, name='csrf-token'),
+    path('topics/mark-completed/', views.mark_topic_completed, name='mark-topic-completed'),
+    path('units/mark-completed/', views.mark_unit_completed, name='mark-unit-completed'),
 ]

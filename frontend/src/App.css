@@ -25,6 +25,10 @@ body {
   font-family: 'Arial', sans-serif;
 }
 
+section {
+  margin-bottom: 4rem;
+}
+
 #root {
   max-width: 100%;
   margin: 0;
@@ -337,7 +341,6 @@ h1 {
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
-  padding: 1rem;
 }
 
 .course-card:hover {
@@ -711,7 +714,7 @@ h1 {
 .course-image {
   height: 160px;
   border-radius: var(--border-radius) var(--border-radius) 0 0;
-  background-color: var(--primary-color);
+  /* background-color: var(--primary-color); */
 }
 
 /* Dark mode adjustments */
@@ -756,5 +759,9 @@ h1 {
     background-color: var(--primary-light);
     color: white;
     border-color: var(--primary-light);
+  }
+
+  html {
+    background-color: #121212;
   }
 }

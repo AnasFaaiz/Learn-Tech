@@ -13,6 +13,9 @@ const courseImageMap = {
   'React.js: Zero to Expert': courseImages['./img/React_JS.png'],
   'Full-Stack Development with MERN': courseImages['./img/FullStack.png'],
   'CSS Mastery: Advanced Layouts': courseImages['./img/CSS.png'],
+  'Data Science with Python': courseImages['./img/Data_Science.png'],
+  'CI/CD Pipeline Implementation': courseImages['CI:CD Pipeline Implementation.jpeg'],
+  'AWS Certified Solutions Architect': courseImages['AWS Solutions Architect.png'],
 }
 
 function App() {
@@ -436,11 +439,73 @@ function App() {
 
         {/* Content Area */}
         {activeTab === 'home' && (
-          <div className="content">
-            <h1>Welcome back, {user.first_name || user.username}!</h1>
-            <p className="subtitle">Pick up where you left off or explore new topics</p>
+  <div className="content">
+    <h1>Welcome back, {user.first_name || user.username}!</h1>
+    <p className="subtitle">Pick up where you left off or explore new topics</p>
 
-            <section className="recommended-section">
+    {/* Continue Learning Section */}
+    <section className="continue-learning-section">
+      <div className="section-header">
+        <h2>Continue Learning</h2>
+        <button className="see-all">See All</button>
+      </div>
+      <div className="course-grid">
+        {userCourses.filter(course => course.progress > 0 && !course.is_completed).length > 0 ? 
+          userCourses
+            .filter(course => course.progress > 0 && !course.is_completed)
+            .sort((a, b) => new Date(b.last_accessed) - new Date(a.last_accessed)) // Sort by last_accessed (newest first)
+            .slice(0, 6) // Limit to 6 courses
+            .map((course) => (
+              <div key={course.id} className="course-card" onClick={() => handleCourseSelect(course.id)}>
+                <div className="course-image">
+                  {courseImageMap[course.title] ? (
+                    <img
+                      src={courseImageMap[course.title].default}
+                      alt={course.title}
+                      style={{
+                        width: '100%',
+                        height: '160px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        borderBottomLeftRadius: '0',
+                        borderBottomRightRadius: '0',
+                      }}
+                    />
+                  ) : (
+                    <div
+                    style={{
+                      backgroundColor: course.image_color || `hsl(${course.id * 60}, 70%, 80%)`,
+                      height: '150px',
+                      borderRadius: '8px',
+                      borderBottomLeftRadius: '0',
+                      borderBottomRightRadius: '0',
+                    }}
+                  ></div>
+                  )}
+                </div>
+<div className="course-content">
+  <h3>{course.course.title}</h3>
+  <p>{course.course.description.substring(0, 80)}...</p>
+  <div className="course-meta">
+    <span>{course.course.rating} ★</span>
+    <span>{course.course.difficulty}</span>
+    <span>{course.course.duration}</span>
+  </div>
+  <div className="course-progress">
+    <div className="progress-bar">
+      <div className="progress" style={{width: `${course.progress}%`}}></div>
+    </div>
+    <span>{course.progress}% completed</span>
+  </div>
+</div>
+              </div>
+            )) : (
+              <p>You haven't started any courses yet. Explore our recommendations below!</p>
+            )}
+      </div>
+    </section>
+
+    <section className="recommended-section">
               <div className="section-header">
                 <h2>Recommended for You</h2>
                 <button className="see-all">See All</button>
@@ -527,7 +592,44 @@ function App() {
           </div>
         )}
 
-        {activeTab !== 'home' && (
+{activeTab === 'courses' && (
+          <div className="content">
+            <h1>Courses</h1>
+            <p className="subtitle">Browse all available courses or search for specific topics</p>
+            
+            <div className="course-categories">
+              <button className="category-btn active">Recommended</button>
+              <button className="category-btn">Web Development</button>
+              <button className="category-btn">Data Science</button>
+              <button className="category-btn">Mobile Development</button>
+              <button className="category-btn">DevOps & Cloud</button>
+              <button className="category-btn">Cybersecurity</button>
+            </div>
+            
+            <div className="course-grid">
+              {recommendedCourses.length > 0 ? recommendedCourses.map((course) => (
+                <div key={course.id} className="course-card" onClick={() => handleCourseSelect(course.id)}>
+                  <div className="course-image" 
+                    style={{backgroundColor: course.image_color || `hsl(${course.id * 60}, 70%, 80%)`}}
+                  ></div>
+                  <div className="course-content">
+                    <h3>{course.title}</h3>
+                    <p>{course.description.substring(0, 80)}...</p>
+                    <div className="course-meta">
+                      <span>{course.rating} ★</span>
+                      <span>{course.difficulty}</span>
+                      <span>{course.duration}</span>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <p>No courses to show.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {(activeTab !== 'home' && activeTab !== 'courses') && (
           <div className="content placeholder-content">
             <h1>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
             <p>This section is under development for the hackathon demo.</p>

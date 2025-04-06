@@ -5,6 +5,7 @@ import './CourseView.css'
 
 function CourseView({ courseId, onBackClick }) {
   const [course, setCourse] = useState(null)
+  const [units, setUnits] = useState([])
   const [activeUnit, setActiveUnit] = useState(null)
   const [activeTopic, setActiveTopic] = useState(null)
   const [viewMode, setViewMode] = useState('overview') // overview, lecture, quiz, project
@@ -12,14 +13,26 @@ function CourseView({ courseId, onBackClick }) {
   const [quizResults, setQuizResults] = useState(null)
   const [loading, setLoading] = useState(true)
   const [aiChatOpen, setAiChatOpen] = useState(false)
+  const [courseProgress, setCourseProgress] = useState(null)
 
   useEffect(() => {
     async function fetchCourseDetails() {
       try {
         setLoading(true)
-        // In a real app, you'd fetch the full course details including units and topics
+        
+        // Fetch course details with units and topics included
         const courseData = await courseService.getCourseById(courseId)
         setCourse(courseData)
+        
+        // Units are already included in the course data
+        setUnits(courseData.units || [])
+        
+        // Get course progress data
+        const progressData = await courseService.getCourseProgress(courseId)
+        setCourseProgress(progressData)
+        
+        console.log('Course data:', courseData)
+        console.log('Progress data:', progressData)
       } catch (error) {
         console.error('Error fetching course details:', error)
       } finally {
@@ -29,44 +42,6 @@ function CourseView({ courseId, onBackClick }) {
 
     fetchCourseDetails()
   }, [courseId])
-
-  // Temporary mock data for UI demonstration
-  const mockUnits = [
-    {
-      id: 1,
-      title: "Introduction to the Course",
-      progress: 100,
-      completed: true,
-      topics: [
-        { id: 1, title: "Course Overview", completed: true },
-        { id: 2, title: "Setting Up Your Environment", completed: true },
-      ]
-    },
-    {
-      id: 2,
-      title: "Core Concepts",
-      progress: 75,
-      completed: false,
-      topics: [
-        { id: 3, title: "Fundamental Principles", completed: true },
-        { id: 4, title: "Practical Applications", completed: true },
-        { id: 5, title: "Advanced Techniques", completed: false },
-        { id: 6, title: "Best Practices", completed: false }
-      ]
-    },
-    {
-      id: 3,
-      title: "Building Your First Project",
-      progress: 0,
-      completed: false,
-      topics: [
-        { id: 7, title: "Project Setup", completed: false },
-        { id: 8, title: "Implementation", completed: false },
-        { id: 9, title: "Testing & Debugging", completed: false },
-        { id: 10, title: "Deployment", completed: false }
-      ]
-    }
-  ]
 
   const mockQuiz = {
     title: "Core Concepts Quiz",
@@ -108,15 +83,20 @@ function CourseView({ courseId, onBackClick }) {
   }
 
   // Handler for marking a unit as "I know this"
-  const handleMarkAsKnown = (unitId) => {
-    setActiveUnit(mockUnits.find(unit => unit.id === unitId))
-    setQuizInProgress(true)
-    setViewMode('quiz')
+  const handleMarkAsKnown = async (unitId) => {
+    try {
+      const unit = units.find(u => u.id === unitId)
+      setActiveUnit(unit)
+      setQuizInProgress(true)
+      setViewMode('quiz')
+    } catch (error) {
+      console.error('Error marking unit as known:', error)
+    }
   }
 
   // Handler for quiz submission
-  const handleSubmitQuiz = (answers) => {
-    // Calculate score (mock implementation)
+  const handleSubmitQuiz = async (answers) => {
+    // Calculate score
     const correctAnswers = mockQuiz.questions.filter((q, index) => 
       answers[index] === q.correctAnswer
     ).length
@@ -132,21 +112,31 @@ function CourseView({ courseId, onBackClick }) {
     
     setQuizInProgress(false)
     
-    // In a real app, you would update the unit's completion status based on the score
+    // If passed, mark unit as completed
     if (score >= 70 && activeUnit) {
-      // Mark unit as completed (mock UI update)
-      const updatedUnits = mockUnits.map(unit => 
-        unit.id === activeUnit.id 
-          ? { ...unit, completed: true, progress: 100 } 
-          : unit
-      )
-      // This is just for the UI demo - in a real app you'd update the state with API calls
+      try {
+        // Call the API to mark the unit as completed
+        await courseService.markUnitCompleted(activeUnit.id)
+        
+        // Refresh course progress data
+        const progressData = await courseService.getCourseProgress(courseId)
+        setCourseProgress(progressData)
+      } catch (error) {
+        console.error('Error updating unit completion:', error)
+      }
     }
   }
 
   const handleStartUnit = (unitId) => {
-    setActiveUnit(mockUnits.find(unit => unit.id === unitId))
-    setActiveTopic(mockUnits.find(unit => unit.id === unitId)?.topics[0] || null)
+    const unit = units.find(u => u.id === unitId)
+    setActiveUnit(unit)
+    
+    if (unit.topics && unit.topics.length > 0) {
+      setActiveTopic(unit.topics[0])
+    } else {
+      setActiveTopic(null)
+    }
+    
     setViewMode('lecture')
   }
 
@@ -155,7 +145,69 @@ function CourseView({ courseId, onBackClick }) {
     setActiveTopic(topic)
     setViewMode('lecture')
   }
-
+  
+  const handleMarkTopicCompleted = async (topicId) => {
+    try {
+      // Call API to mark topic as completed
+      await courseService.markTopicCompleted(topicId)
+      
+      // Refresh course progress data
+      const progressData = await courseService.getCourseProgress(courseId)
+      setCourseProgress(progressData)
+      
+      // Update the activeTopic to show it as completed
+      setActiveTopic(prev => ({
+        ...prev,
+        is_completed: true
+      }))
+      
+      // Update the activeUnit to reflect the topic's completion status
+      setActiveUnit(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          topics: prev.topics.map(topic => 
+            topic.id === topicId 
+              ? { ...topic, is_completed: true } 
+              : topic
+          ),
+          // Update unit progress if the API doesn't return updated units
+          progress: progressData?.units?.find(u => u.id === prev.id)?.progress || prev.progress
+        };
+      });
+      
+      // Update the units array to reflect the changes
+      setUnits(prev => 
+        prev.map(unit => {
+          if (unit.id === activeUnit?.id) {
+            // Check if all topics in this unit are now completed
+            const updatedTopics = unit.topics.map(topic => 
+              topic.id === topicId 
+                ? { ...topic, is_completed: true } 
+                : topic
+            );
+            
+            // Get updated progress from API response or calculate it
+            const updatedProgress = progressData?.units?.find(u => u.id === unit.id)?.progress || unit.progress;
+            
+            // Check if all topics are completed to mark unit as completed
+            const allTopicsCompleted = updatedTopics.every(topic => topic.is_completed);
+            
+            return {
+              ...unit,
+              topics: updatedTopics,
+              progress: updatedProgress,
+              is_completed: allTopicsCompleted
+            };
+          }
+          return unit;
+        })
+      );
+    } catch (error) {
+      console.error('Error marking topic as completed:', error)
+    }
+  }
+  
   if (loading) {
     return <div className="course-view-loading">Loading course content...</div>
   }
@@ -163,8 +215,8 @@ function CourseView({ courseId, onBackClick }) {
   const renderUnitsList = () => (
     <div className="course-units-list">
       <h2>Course Units</h2>
-      {mockUnits.map(unit => (
-        <div key={unit.id} className={`course-unit-card ${unit.completed ? 'completed' : ''}`}>
+      {units.map(unit => (
+        <div key={unit.id} className={`course-unit-card ${unit.is_completed ? 'completed' : ''}`}>
           <div className="unit-header">
             <h3>{unit.title}</h3>
             <div className="unit-progress">
@@ -183,7 +235,7 @@ function CourseView({ courseId, onBackClick }) {
               {unit.progress > 0 ? 'Continue Unit' : 'Start Unit'}
             </button>
             
-            {!unit.completed && (
+            {!unit.is_completed && (
               <button 
                 className="know-this-btn"
                 onClick={() => handleMarkAsKnown(unit.id)}
@@ -207,14 +259,14 @@ function CourseView({ courseId, onBackClick }) {
             <div className="unit-sidebar">
               <h3>Unit: {activeUnit.title}</h3>
               <div className="topics-list">
-                {activeUnit.topics.map(topic => (
+                {activeUnit.topics && activeUnit.topics.map(topic => (
                   <button 
                     key={topic.id}
-                    className={`topic-item ${topic.completed ? 'completed' : ''} ${activeTopic?.id === topic.id ? 'active' : ''}`}
+                    className={`topic-item ${topic.is_completed ? 'completed' : ''} ${activeTopic?.id === topic.id ? 'active' : ''}`}
                     onClick={() => handleSelectTopic(topic.id)}
                   >
                     {topic.title}
-                    {topic.completed && <CheckCircle size={16} />}
+                    {topic.is_completed && <CheckCircle size={16} />}
                   </button>
                 ))}
               </div>
@@ -252,35 +304,25 @@ function CourseView({ courseId, onBackClick }) {
                   </div>
                   
                   <div className="lecture-content">
-                    {/* Mock lecture content */}
-                    <p>This is the lecture content for {activeTopic.title}. In a real application, this would include videos, interactive elements, and more detailed explanations.</p>
+                    <div dangerouslySetInnerHTML={{ __html: activeTopic.content }} />
                     
-                    <h3>Key Points</h3>
-                    <ul>
-                      <li>Understanding the core principles behind {activeTopic.title}</li>
-                      <li>Practical applications and use cases</li>
-                      <li>Best practices and common pitfalls to avoid</li>
-                      <li>Advanced techniques for experienced users</li>
-                    </ul>
+                    {activeTopic.code_example && (
+                      <>
+                        <h3>Interactive Example</h3>
+                        <div className="code-example">
+                          <pre><code>{activeTopic.code_example}</code></pre>
+                        </div>
+                      </>
+                    )}
                     
-                    <div className="video-placeholder">
-                      <div className="play-button">▶</div>
-                      <p>Video Lecture: {activeTopic.title}</p>
-                    </div>
-                    
-                    <h3>Interactive Example</h3>
-                    <div className="code-example">
-                      <pre><code>{`function example() {
-  // This is a sample code snippet
-  const data = processInput();
-  
-  if (data.isValid) {
-    return applyTechnique(data);
-  }
-  
-  return handleError();
-}`}</code></pre>
-                    </div>
+                    {!activeTopic.is_completed && (
+                      <button 
+                        className="mark-completed-btn"
+                        onClick={() => handleMarkTopicCompleted(activeTopic.id)}
+                      >
+                        Mark as Completed
+                      </button>
+                    )}
                   </div>
                 </>
               ) : (
@@ -397,139 +439,145 @@ function CourseView({ courseId, onBackClick }) {
     }
   };
 
-  const renderOverview = () => (
-    <div className="course-overview">
-      <div className="course-header" 
-        style={{backgroundColor: course?.image_color || '#7e57c2'}}>
-        <button className="back-button" onClick={onBackClick}>
-          <ArrowLeft size={20} />
-          Back to Courses
-        </button>
-        <h1>{course?.title || 'Course Title'}</h1>
-        <div className="course-meta">
-          <span className="difficulty">{course?.difficulty || 'Intermediate'}</span>
-          <span className="rating">{course?.rating || '4.8'} ★</span>
-          <span className="duration"><Clock size={16} /> {course?.duration || '12h 30m'}</span>
-        </div>
-      </div>
-      
-      <div className="course-content-wrapper">
-        <div className="course-main-content">
-          <div className="course-description">
-            <h2>About This Course</h2>
-            <p>{course?.description || 'Course description loading...'}</p>
-            
-            <div className="course-stats">
-              <div className="stat-item">
-                <Award size={24} />
-                <div className="stat-text">
-                  <h4>Certification</h4>
-                  <p>Available upon completion</p>
-                </div>
-              </div>
-              <div className="stat-item">
-                <BookOpen size={24} />
-                <div className="stat-text">
-                  <h4>Units</h4>
-                  <p>{mockUnits.length} course units</p>
-                </div>
-              </div>
-              <div className="stat-item">
-                <FileText size={24} />
-                <div className="stat-text">
-                  <h4>Projects</h4>
-                  <p>3 hands-on projects</p>
-                </div>
-              </div>
-              <div className="stat-item">
-                <Code size={24} />
-                <div className="stat-text">
-                  <h4>Prerequisites</h4>
-                  <p>Basic programming knowledge</p>
-                </div>
-              </div>
-            </div>
+  const renderOverview = () => {
+    // Calculate overall progress
+    const overallProgress = courseProgress?.overall_progress || 0;
+    const completedUnits = courseProgress?.completed_units || 0;
+    
+    return (
+      <div className="course-overview">
+        <div className="course-header" 
+          style={{backgroundColor: course?.image_color || '#7e57c2'}}>
+          <button className="back-button" onClick={onBackClick}>
+            <ArrowLeft size={20} />
+            Back to Courses
+          </button>
+          <h1>{course?.title || 'Course Title'}</h1>
+          <div className="course-meta">
+            <span className="difficulty">{course?.difficulty || 'Intermediate'}</span>
+            <span className="rating">{course?.rating || '4.8'} ★</span>
+            <span className="duration"><Clock size={16} /> {course?.duration || '12h 30m'}</span>
           </div>
-          
-          {renderUnitsList()}
         </div>
         
-        <div className="course-sidebar">
-          <div className="progress-card">
-            <h3>Your Progress</h3>
-            <div className="progress-ring">
-              <svg width="120" height="120" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="54" fill="none" stroke="#e0e0e0" strokeWidth="12" />
-                <circle 
-                  cx="60" 
-                  cy="60" 
-                  r="54" 
-                  fill="none" 
-                  stroke="#7e57c2" 
-                  strokeWidth="12" 
-                  strokeDasharray="339.3"
-                  strokeDashoffset={339.3 * (1 - 0.33)} // 33% complete (mockup)
-                  transform="rotate(-90 60 60)"
-                />
-              </svg>
-              <div className="progress-text">33%</div>
+        <div className="course-content-wrapper">
+          <div className="course-main-content">
+            <div className="course-description">
+              <h2>About This Course</h2>
+              <p>{course?.description || 'Course description loading...'}</p>
+              
+              <div className="course-stats">
+                <div className="stat-item">
+                  <Award size={24} />
+                  <div className="stat-text">
+                    <h4>Certification</h4>
+                    <p>Available upon completion</p>
+                  </div>
+                </div>
+                <div className="stat-item">
+                  <BookOpen size={24} />
+                  <div className="stat-text">
+                    <h4>Units</h4>
+                    <p>{units.length} course units</p>
+                  </div>
+                </div>
+                <div className="stat-item">
+                  <FileText size={24} />
+                  <div className="stat-text">
+                    <h4>Projects</h4>
+                    <p>3 hands-on projects</p>
+                  </div>
+                </div>
+                <div className="stat-item">
+                  <Code size={24} />
+                  <div className="stat-text">
+                    <h4>Prerequisites</h4>
+                    <p>Basic programming knowledge</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p>1 of 3 units completed</p>
+            
+            {renderUnitsList()}
           </div>
           
-          <div className="learning-paths-card">
-            <h3>Learning Paths</h3>
-            <p>This course is part of these learning paths:</p>
-            <ul>
-              <li>Full-Stack Web Development</li>
-              <li>Mobile App Developer</li>
-            </ul>
+          <div className="course-sidebar">
+            <div className="progress-card">
+              <h3>Your Progress</h3>
+              <div className="progress-ring">
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="54" fill="none" stroke="#e0e0e0" strokeWidth="12" />
+                  <circle 
+                    cx="60" 
+                    cy="60" 
+                    r="54" 
+                    fill="none" 
+                    stroke="#7e57c2" 
+                    strokeWidth="12" 
+                    strokeDasharray="339.3"
+                    strokeDashoffset={339.3 * (1 - overallProgress / 100)}
+                    transform="rotate(-90 60 60)"
+                  />
+                </svg>
+                <div className="progress-text">{overallProgress}%</div>
+              </div>
+              <p>{completedUnits} of {units.length} units completed</p>
+            </div>
+            
+            <div className="learning-paths-card">
+              <h3>Learning Paths</h3>
+              <p>This course is part of these learning paths:</p>
+              <ul>
+                <li>Full-Stack Web Development</li>
+                <li>Mobile App Developer</li>
+              </ul>
+            </div>
+            
+            <button 
+              className="ai-chat-button"
+              onClick={() => setAiChatOpen(true)}
+            >
+              <MessageCircle size={18} />
+              Discuss with AI Assistant
+            </button>
           </div>
-          
-          <button 
-            className="ai-chat-button"
-            onClick={() => setAiChatOpen(true)}
-          >
-            <MessageCircle size={18} />
-            Discuss with AI Assistant
-          </button>
         </div>
+        
+        {aiChatOpen && (
+          <div className="ai-chat-modal">
+            <div className="ai-chat-container">
+              <div className="chat-header">
+                <h3>AI Learning Assistant</h3>
+                <button onClick={() => setAiChatOpen(false)}>×</button>
+              </div>
+              <div className="chat-messages">
+                <div className="message ai">
+                  <div className="message-content">
+                    <p>Hello! I'm your AI learning assistant for this course. How can I help you today?</p>
+                  </div>
+                </div>
+                <div className="message user">
+                  <div className="message-content">
+                    <p>Can you explain the concept from Unit 2 in more detail?</p>
+                  </div>
+                </div>
+                <div className="message ai">
+                  <div className="message-content">
+                    <p>Of course! Unit 2 covers Core Concepts, which includes fundamental principles and practical applications.</p>
+                    <p>The key idea is to understand how these principles work together to create robust solutions. Would you like me to elaborate on a specific topic within this unit?</p>
+                  </div>
+                </div>
+              </div>
+              <div className="chat-input">
+                <input type="text" placeholder="Ask a question about this course..." />
+                <button>Send</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      
-      {aiChatOpen && (
-        <div className="ai-chat-modal">
-          <div className="ai-chat-container">
-            <div className="chat-header">
-              <h3>AI Learning Assistant</h3>
-              <button onClick={() => setAiChatOpen(false)}>×</button>
-            </div>
-            <div className="chat-messages">
-              <div className="message ai">
-                <div className="message-content">
-                  <p>Hello! I'm your AI learning assistant for this course. How can I help you today?</p>
-                </div>
-              </div>
-              <div className="message user">
-                <div className="message-content">
-                  <p>Can you explain the concept from Unit 2 in more detail?</p>
-                </div>
-              </div>
-              <div className="message ai">
-                <div className="message-content">
-                  <p>Of course! Unit 2 covers Core Concepts, which includes fundamental principles and practical applications.</p>
-                  <p>The key idea is to understand how these principles work together to create robust solutions. Would you like me to elaborate on a specific topic within this unit?</p>
-                </div>
-              </div>
-            </div>
-            <div className="chat-input">
-              <input type="text" placeholder="Ask a question about this course..." />
-              <button>Send</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="course-view-container">

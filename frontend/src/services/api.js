@@ -149,11 +149,47 @@ export const courseService = {
       throw error;
     }
   },
+
+  getCourseProgress: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/progress/`);
+      return response.data;
+    } catch (error) {
+      console.error('Get course progress error:', error);
+      throw error;
+    }
+  },
+
+
+  markTopicCompleted: async (topicId) => {
+    try {
+      const response = await apiClient.post('/topics/mark-completed/', {
+        topic_id: topicId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Mark topic completed error:', error);
+      throw error;
+    }
+  },
+  
+  markUnitCompleted: async (unitId) => {
+    try {
+      const response = await apiClient.post('/units/mark-completed/', {
+        unit_id: unitId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Mark unit completed error:', error);
+      throw error;
+    }
+  },
   
   // Get course units
   getCourseUnits: async (courseId) => {
     try {
       const response = await apiClient.get(`/courses/${courseId}/units/`);
+      console.log('Course units:', response.data);
       return response.data;
     } catch (error) {
       console.error('Get course units error:', error);

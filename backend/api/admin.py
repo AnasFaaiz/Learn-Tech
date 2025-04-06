@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-from .models import Course, UserCourse, LearningPath, PathMilestone
+from .models import Course, UserCourse, LearningPath, PathMilestone, Unit, Topic, UserTopic
 
 # Register models with the admin interface
 @admin.register(Course)
@@ -9,6 +9,24 @@ class CourseAdmin(admin.ModelAdmin):
     list_display = ('title', 'difficulty', 'duration', 'rating')
     search_fields = ('title', 'description')
     list_filter = ('difficulty',)
+
+@admin.register(Unit)
+class UnitAdmin(admin.ModelAdmin):
+    list_display = ('title', 'course', 'order')
+    list_filter = ('course',)
+    search_fields = ('title', 'description')
+
+@admin.register(Topic)
+class TopicAdmin(admin.ModelAdmin):
+    list_display = ('title', 'unit', 'order')
+    list_filter = ('unit__course', 'unit')
+    search_fields = ('title', 'content')
+
+@admin.register(UserTopic)
+class UserTopicAdmin(admin.ModelAdmin):
+    list_display = ('user', 'topic', 'is_completed', 'completed_at')
+    list_filter = ('is_completed', 'topic__unit__course')
+    search_fields = ('user__username', 'topic__title')
 
 @admin.register(UserCourse)
 class UserCourseAdmin(admin.ModelAdmin):
